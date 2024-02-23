@@ -17,5 +17,5 @@
     "resolveJsonModule": true,
     "typeRoots": ["types", "node_modules/@types"]
   },
-  "exclude": ["node_modules", "template"]
+  "exclude": ["node_modules", "template","lib"]
 }
