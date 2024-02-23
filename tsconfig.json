@@ -1,0 +1,21 @@
+{
+  "compilerOptions": {
+    "module": "commonjs",
+    "esModuleInterop": true,
+    "lib": ["esnext"],
+    "target": "es6",
+    "strict": true,
+    "noUnusedLocals": true,
+    "sourceMap": false,
+    "moduleResolution": "node",
+    "declaration":true,
+    "outDir": "lib",
+    "rootDir": "src",
+    "importHelpers": true,
+    "allowSyntheticDefaultImports": true,
+    "skipLibCheck": true,
+    "resolveJsonModule": true,
+    "typeRoots": ["types", "node_modules/@types"]
+  },
+  "exclude": ["node_modules", "template"]
+}

@@ -1,0 +1,42 @@
+{
+  "name": "@erendingfe/jmfe-cli",
+  "version": "1.0.0",
+  "description": "jmfe-cli-demo",
+  "keywords": [
+    "webpack",
+    "react",
+    "cli",
+    "typescript",
+    "jm",
+    "mygzb",
+    "pug",
+    "preact",
+    "electron",
+    "build"
+  ],
+  "main": "lib/index.js",
+  "bin": {
+    "jmfe": "lib/index.js"
+  },
+  "files": [
+    "lib",
+    "template"
+  ],
+  "scripts": {
+    "build": "tsc",
+    "start": "ts-node src/index.ts start",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "erending",
+  "license": "MIT",
+  "devDependencies": {
+    "@types/node": "^20.11.19",
+    "prettier": "^3.2.5",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.3.3"
+  },
+  "dependencies": {
+    "commander": "^12.0.0",
+    "inquirer": "^9.2.15"
+  }
+}
