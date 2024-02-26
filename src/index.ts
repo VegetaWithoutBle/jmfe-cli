@@ -8,16 +8,19 @@ import { CreateCmdConfig } from './cmds/create/type'
 import { serve } from './cmds/serve'
 import { start } from './cmds/start'
 import { StartCmdConfig } from './cmds/start/type'
+import store from './store'
+import { initStoreValue } from './utils'
 
-const pkg = require('../package.json')
-
-program.version(`当前版本: ${pkg.version}`, '-v, --version', 'get current version')
+initStoreValue()
+program.version(`当前版本: ${store.cliPackageJson.version}`, '-v, --version', 'get current version')
 program
   .command('create <projectName>')
   .description('Create a react project')
-  .action(projectName => {
+  .option('-r, --remote <remote>', '远程模板地址')
+  .action((projectName, option) => {
     let createParams: CreateCmdConfig = {
       projectName: projectName,
+      remoteUrl: option.remote,
     }
     create(createParams)
   })
