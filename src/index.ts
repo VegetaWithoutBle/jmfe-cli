@@ -20,7 +20,7 @@ program
   .action((projectName, option) => {
     let createParams: CreateCmdConfig = {
       projectName: projectName,
-      remoteUrl: option.remote,
+      remoteTemplateUrl: option.remote,
     }
     create(createParams)
   })

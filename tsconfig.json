@@ -8,8 +8,8 @@
     "noUnusedLocals": true,
     "sourceMap": false,
     "moduleResolution": "node",
-    "declaration":true,
-    "outDir": "lib",
+    "declaration": true,
+    "outDir": "dist",
     "rootDir": "src",
     "importHelpers": true,
     "allowSyntheticDefaultImports": true,
@@ -17,5 +17,5 @@
     "resolveJsonModule": true,
     "typeRoots": ["types", "node_modules/@types"]
   },
-  "exclude": ["node_modules", "template","lib"]
+  "exclude": ["node_modules", "template", "dist"]
 }
