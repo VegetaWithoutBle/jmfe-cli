@@ -20,6 +20,10 @@ export class Store {
    * cli的packageJson数据
    */
   public cliPackageJson: CliPkg = {}
+  /**
+   * 用户环境使用yarn
+   */
+  public isUseYarn: boolean = false
 }
 
 const store = new Store()

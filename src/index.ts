@@ -4,35 +4,26 @@ import { program } from 'commander'
 import { analyze } from './cmds/analyze'
 import { build } from './cmds/build'
 import { create } from './cmds/create'
-import { CreateCmdConfig } from './cmds/create/type'
 import { serve } from './cmds/serve'
 import { start } from './cmds/start'
-import { StartCmdConfig } from './cmds/start/type'
 import store from './store'
-import { initStoreValue } from './utils'
+import { initStoreValue } from './utils/store'
 
 initStoreValue()
 program.version(`当前版本: ${store.cliPackageJson.version}`, '-v, --version', 'get current version')
 program
   .command('create <projectName>')
   .description('Create a react project')
-  .option('-r, --remote <remote>', '远程模板地址')
+  .option('-r, --remote <remote>', 'user url to download the remote template')
   .action((projectName, option) => {
-    let createParams: CreateCmdConfig = {
-      projectName: projectName,
-      remoteTemplateUrl: option.remote,
-    }
-    create(createParams)
+    create({ projectName: projectName, remoteTemplateUrl: option.remote })
   })
 program
   .command('start')
-  .option('-p, --port <port>', '设置端口')
+  .option('-p, --port <port>', 'set start port')
   .description('start a program')
   .action(option => {
-    let startParams: StartCmdConfig = {
-      port: option.port,
-    }
-    start(startParams)
+    start({ port: option.port })
   })
 program
   .command('build')
