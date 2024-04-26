@@ -1,4 +1,5 @@
 import chalk from 'chalk'
+import { execSync } from 'child_process'
 import fs from 'fs-extra'
 import path from 'path'
 import validateNpmName from 'validate-npm-package-name'
@@ -11,18 +12,26 @@ const currentPath = process.cwd()
 export const create = async (params: CreateCmdConfig) => {
   const { projectName, remoteTemplateUrl } = params
   const projectPath = path.join(currentPath, projectName)
-  const templatePath = path.join(store.cliPath, '../template')
+  const templatePath = path.join(store.cliPath, 'template')
   // 创建项目文件夹
   createProjectDir({ projectName: projectName, projectPath: projectPath })
   // 进入项目文件夹内工作目录
   process.chdir(projectPath)
-  // 生成项目文件
+  // 初始化git
+  gitInit()
+  // 克隆模板生成项目文件
   await cloneTemplate({
     localTemplatePath: templatePath,
     projectPath: projectPath,
     remoteTemplateUrl: remoteTemplateUrl,
   })
+  // 运行插件
+  await initPlugins()
+  // 创建结束
+  welcome(projectName)
 }
+
+const initPlugins = async () => {}
 
 const createProjectDir = (params: CreateProjectConfig) => {
   const { projectName, projectPath } = params
@@ -74,4 +83,25 @@ const printValidationResults = (results?: string[]) => {
       console.error(chalk.red(`  *  ${error}`))
     })
   }
+}
+
+const gitInit = () => {
+  try {
+    execSync('git init', { stdio: 'ignore' })
+  } catch (error) {
+    message.error('git init failed', error?.message)
+  }
+}
+
+const welcome = (projectName: string) => {
+  const cmd = store.isUseYarn ? 'yarn' : 'npm'
+  console.log(`
+✨ Success! Created ${chalk.blue(projectName)}
+Inside that directory, you can run several commands:\n
+  ${chalk.green(`${cmd} start`)}  ${chalk.gray(`# Starts the development server.`)}
+  ${chalk.green(`${cmd} build`)}  ${chalk.gray(`# Bundles the app into static files for production.`)}
+  ${chalk.green(`${cmd} serve`)}  ${chalk.gray(`# Serve production bundle in 'dist'`)}
+  ${chalk.green(`${cmd} analyze`)}  ${chalk.gray(`# Analyze webpack bundle for production`)}\n
+Typing ${chalk.green(`cd ${projectName}`)} to start code happily.
+  `)
 }

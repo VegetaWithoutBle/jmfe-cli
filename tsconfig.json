@@ -13,6 +13,7 @@
     "rootDir": "src",
     "importHelpers": true,
     "allowSyntheticDefaultImports": true,
+    "useUnknownInCatchVariables": false,
     "skipLibCheck": true,
     "resolveJsonModule": true,
     "typeRoots": ["types", "node_modules/@types"]
