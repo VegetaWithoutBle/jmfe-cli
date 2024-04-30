@@ -1,53 +1,176 @@
 import chalk from 'chalk'
 import { execSync } from 'child_process'
-import fs from 'fs-extra'
+import fs, { writeJSON } from 'fs-extra'
+import pickBy from 'lodash/pickBy'
 import path from 'path'
+import semver from 'semver'
 import validateNpmName from 'validate-npm-package-name'
 import store from '../../store'
+import { transformDependencies } from '../../utils/common'
 import { message } from '../../utils/log'
 import { CloneTemplateConfig, CreateCmdConfig, CreateProjectConfig } from './type'
 
 const currentPath = process.cwd()
+const builinDevDependencies = [
+  // format
+  'prettier',
+  'pretty-quick',
+  'husky',
+  '@types/webpack-env',
+  '@types/react-hot-loader',
+]
 
 export const create = async (params: CreateCmdConfig) => {
-  const { projectName, remoteTemplateUrl } = params
-  const projectPath = path.join(currentPath, projectName)
+  const { appName, remoteTemplateUrl } = params
+  const appPath = path.join(currentPath, appName)
   const templatePath = path.join(store.cliPath, 'template')
-  // 创建项目文件夹
-  createProjectDir({ projectName: projectName, projectPath: projectPath })
-  // 进入项目文件夹内工作目录
-  process.chdir(projectPath)
-  // 初始化git
+  // create app file
+  createAppDir({ appName: appName, appPath: appPath })
+  process.chdir(appPath)
+  // init git
   gitInit()
-  // 克隆模板生成项目文件
+  // clone app template
   await cloneTemplate({
     localTemplatePath: templatePath,
-    projectPath: projectPath,
+    appPath: appPath,
     remoteTemplateUrl: remoteTemplateUrl,
   })
-  // 运行插件
+  await initialPackageJson({
+    appName: appName,
+    appPath: appPath,
+    templatePath: templatePath,
+  })
+  // inject plugins
   await initPlugins()
-  // 创建结束
-  welcome(projectName)
+  // create end.
+  welcome(appName)
 }
 
 const initPlugins = async () => {}
 
-const createProjectDir = (params: CreateProjectConfig) => {
-  const { projectName, projectPath } = params
-  // 校验项目名合法
-  validateProjectName(projectName)
-  // 校验项目文件夹是否存在
-  validateProjectExisted(projectPath, projectName)
-  // 创建文件夹
-  fs.ensureDirSync(projectPath)
+/**
+ * initial package.json data by template
+ */
+const initialPackageJson = async (params: { appName: string; appPath: string; templatePath: string }) => {
+  const { appName, appPath, templatePath } = params
+  const ownPackageJson = store.cliPackageJson
+  const binName = Object.keys(ownPackageJson.bin as object)[0]
+  const reservedProperties = {
+    name: appName,
+    version: '0.1.0',
+    private: true,
+    dependencies: {},
+    devDependencies: {},
+    scripts: {
+      start: `${binName} start`,
+      build: `${binName} build`,
+      serve: `${binName} serve`,
+      analyze: `${binName} analyze`,
+    },
+    // prettier format
+    husky: {
+      hooks: {
+        'pre-commit': 'pretty-quick --staged',
+      },
+    },
+  }
+  const optionalProperties = {
+    jm: {
+      // proxy config, can use template variable in .env.*
+      proxy: {},
+      // for antd, antd-mobile
+      importPlugin: [],
+    },
+    browserslist: 'last 2 versions',
+    optionalDependencies: {},
+  }
+  let packageJson: { [key: string]: any } = {
+    ...reservedProperties,
+    ...optionalProperties,
+  }
+
+  if (fs.existsSync(templatePath)) {
+    const templatePackageJson = require(path.join(templatePath, 'package.json'))
+
+    if (templatePackageJson.dependencies) {
+      packageJson.dependencies = { ...packageJson.dependencies, ...templatePackageJson.dependencies }
+    }
+
+    if (templatePackageJson.devDependencies) {
+      packageJson.devDependencies = { ...packageJson.devDependencies, ...templatePackageJson.devDependencies }
+    }
+
+    if (templatePackageJson.scripts) {
+      packageJson.scripts = { ...packageJson.scripts, ...templatePackageJson.scripts }
+    }
+
+    // merge package.json
+    const includeFields: string[] = templatePackageJson.includeFields || []
+    const pickedPkg = pickBy(
+      templatePackageJson,
+      (value, key) => key in optionalProperties || key.startsWith('jm') || includeFields.indexOf(key) !== -1,
+    )
+
+    packageJson = {
+      ...packageJson,
+      ...pickedPkg,
+    }
+    console.log(packageJson, 'pacakgeJson')
+
+    await writeJSON(path.join(appPath, 'package.json'), packageJson)
+    message.info(`Installing pacakges. This might take a couple of minutes.`)
+
+    const devdependencies = builinDevDependencies
+      .filter(dep => {
+        return !(dep in packageJson.dependencies) && !(dep in packageJson.devDependencies)
+      })
+      .concat(transformDependencies(packageJson.devDependencies))
+    const dependencies = transformDependencies(packageJson.dependencies)
+    let packageToInstall = ownPackageJson.name as string
+    let cliVersion = packageJson.devDependencies[packageToInstall]
+    delete packageJson.devDependencies[packageToInstall]
+    if (cliVersion) {
+      const validSemver = semver.valid(cliVersion)
+      if (validSemver) {
+        packageToInstall += `@${validSemver}`
+      }
+    }
+    devdependencies.push(packageToInstall)
+
+    let dependenciesInstallCommand: string
+    let devDependenciesInstallCommand: string
+    if (store.isUseYarn) {
+      const command = 'yarnpkg'
+      dependenciesInstallCommand = `${command} add ${dependencies.join(' ')} -s`
+      devDependenciesInstallCommand = `${command} add ${devdependencies.join(' ')} --dev -s`
+    } else {
+      const command = 'npm'
+      dependenciesInstallCommand = `${command} install ${dependencies.join(' ')} --save`
+      devDependenciesInstallCommand = `${command} install ${devdependencies.join(' ')} --save-dev`
+    }
+
+    message.info(chalk.cyan(`Installing dependencies...`))
+    execSync(dependenciesInstallCommand, { stdio: 'inherit' })
+    message.info(chalk.cyan(`Installing devdependencies...`))
+    execSync(devDependenciesInstallCommand, { stdio: 'inherit' })
+  }
+}
+
+const createAppDir = (params: CreateProjectConfig) => {
+  const { appName, appPath } = params
+  // validate app name
+  validateAppName(appName)
+  // validate app existed
+  validateAppExisted(appPath, appName)
+  // create file
+  fs.ensureDirSync(appPath)
 }
 
 const cloneTemplate = async (params: CloneTemplateConfig) => {
-  const { localTemplatePath, projectPath, remoteTemplateUrl } = params
+  const { localTemplatePath, appPath, remoteTemplateUrl } = params
   if (remoteTemplateUrl) message.warn('Unsupported remote template, using local template ')
   return await new Promise<void>(resolve => {
-    fs.copy(localTemplatePath, projectPath, (err: NodeJS.ErrnoException | null | undefined) => {
+    fs.copy(localTemplatePath, appPath, (err: NodeJS.ErrnoException | null | undefined) => {
       if (err) {
         message.error(`Clone local template failed：${err.message}`)
         process.exit(1)
@@ -59,18 +182,18 @@ const cloneTemplate = async (params: CloneTemplateConfig) => {
   })
 }
 
-const validateProjectExisted = (projectPath: string, projectName: string) => {
-  const isExist = fs.existsSync(projectPath)
+const validateAppExisted = (appPath: string, appName: string) => {
+  const isExist = fs.existsSync(appPath)
   if (isExist) {
-    message.error(`Could not create a project called ${projectName}, directory existed.`)
+    message.error(`Could not create a app called ${appName}, directory existed.`)
     process.exit(1)
   }
 }
 
-const validateProjectName = (projectName: string) => {
-  const res = validateNpmName(projectName)
+const validateAppName = (appName: string) => {
+  const res = validateNpmName(appName)
   if (!res.validForNewPackages) {
-    message.error(`Could not create a project called ${chalk.red(projectName)} because of npm naming restrictions:`)
+    message.error(`Could not create a app called ${chalk.red(appName)} because of npm naming restrictions:`)
     printValidationResults(res.errors)
     printValidationResults(res.warnings)
     process.exit(1)
@@ -93,15 +216,15 @@ const gitInit = () => {
   }
 }
 
-const welcome = (projectName: string) => {
+const welcome = (appName: string) => {
   const cmd = store.isUseYarn ? 'yarn' : 'npm'
   console.log(`
-✨ Success! Created ${chalk.blue(projectName)}
+✨ Success! Created ${chalk.blue(appName)}
 Inside that directory, you can run several commands:\n
   ${chalk.green(`${cmd} start`)}  ${chalk.gray(`# Starts the development server.`)}
   ${chalk.green(`${cmd} build`)}  ${chalk.gray(`# Bundles the app into static files for production.`)}
   ${chalk.green(`${cmd} serve`)}  ${chalk.gray(`# Serve production bundle in 'dist'`)}
   ${chalk.green(`${cmd} analyze`)}  ${chalk.gray(`# Analyze webpack bundle for production`)}\n
-Typing ${chalk.green(`cd ${projectName}`)} to start code happily.
+Typing ${chalk.green(`cd ${appName}`)} to start code happily.
   `)
 }

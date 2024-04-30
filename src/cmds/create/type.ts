@@ -1,14 +1,14 @@
 export interface CreateCmdConfig {
-  projectName: string
+  appName: string
   remoteTemplateUrl?: string
 }
 
 export interface CreateProjectConfig {
-  projectPath: string
-  projectName: string
+  appPath: string
+  appName: string
 }
 export interface CloneTemplateConfig {
-  projectPath: string
+  appPath: string
   localTemplatePath: string
   remoteTemplateUrl?: string
 }

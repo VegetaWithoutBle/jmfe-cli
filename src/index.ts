@@ -16,7 +16,7 @@ program
   .description('Create a react project')
   .option('-r, --remote <remote>', 'user url to download the remote template')
   .action((projectName, option) => {
-    create({ projectName: projectName, remoteTemplateUrl: option.remote })
+    create({ appName: projectName, remoteTemplateUrl: option.remote })
   })
 program
   .command('start')
