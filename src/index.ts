@@ -15,8 +15,9 @@ program
   .command('create <projectName>')
   .description('Create a react project')
   .option('-r, --remote <remote>', 'user url to download the remote template')
+  .option('-l, --local <local>', 'use default | v18 | v16, if un set local type, use default type')
   .action((projectName, option) => {
-    create({ appName: projectName, remoteTemplateUrl: option.remote })
+    create({ appName: projectName, remoteTemplateUrl: option.remote, localTemplateType: option.local })
   })
 program
   .command('start')

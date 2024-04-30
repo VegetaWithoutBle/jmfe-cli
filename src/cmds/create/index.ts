@@ -11,7 +11,7 @@ import { message } from '../../utils/log'
 import { CloneTemplateConfig, CreateCmdConfig, CreateProjectConfig } from './type'
 
 const currentPath = process.cwd()
-const builinDevDependencies = [
+const buildingDevDependencies = [
   // format
   'prettier',
   'pretty-quick',
@@ -21,9 +21,9 @@ const builinDevDependencies = [
 ]
 
 export const create = async (params: CreateCmdConfig) => {
-  const { appName, remoteTemplateUrl } = params
+  const { appName, remoteTemplateUrl, localTemplateType = 'v18' } = params
   const appPath = path.join(currentPath, appName)
-  const templatePath = path.join(store.cliPath, 'template')
+  const templatePath = path.join(store.cliPath, `template/${localTemplateType}`)
   // create app file
   createAppDir({ appName: appName, appPath: appPath })
   process.chdir(appPath)
@@ -76,6 +76,8 @@ const initialPackageJson = async (params: { appName: string; appPath: string; te
   }
   const optionalProperties = {
     jm: {
+      // unPack dependencies, usually use cdn scripts
+      externals: {},
       // proxy config, can use template variable in .env.*
       proxy: {},
       // for antd, antd-mobile
@@ -115,12 +117,11 @@ const initialPackageJson = async (params: { appName: string; appPath: string; te
       ...packageJson,
       ...pickedPkg,
     }
-    console.log(packageJson, 'pacakgeJson')
 
     await writeJSON(path.join(appPath, 'package.json'), packageJson)
     message.info(`Installing pacakges. This might take a couple of minutes.`)
 
-    const devdependencies = builinDevDependencies
+    const devDependencies = buildingDevDependencies
       .filter(dep => {
         return !(dep in packageJson.dependencies) && !(dep in packageJson.devDependencies)
       })
@@ -135,18 +136,18 @@ const initialPackageJson = async (params: { appName: string; appPath: string; te
         packageToInstall += `@${validSemver}`
       }
     }
-    devdependencies.push(packageToInstall)
+    devDependencies.push(packageToInstall)
 
     let dependenciesInstallCommand: string
     let devDependenciesInstallCommand: string
     if (store.isUseYarn) {
       const command = 'yarnpkg'
       dependenciesInstallCommand = `${command} add ${dependencies.join(' ')} -s`
-      devDependenciesInstallCommand = `${command} add ${devdependencies.join(' ')} --dev -s`
+      devDependenciesInstallCommand = `${command} add ${devDependencies.join(' ')} --dev -s`
     } else {
       const command = 'npm'
       dependenciesInstallCommand = `${command} install ${dependencies.join(' ')} --save`
-      devDependenciesInstallCommand = `${command} install ${devdependencies.join(' ')} --save-dev`
+      devDependenciesInstallCommand = `${command} install ${devDependencies.join(' ')} --save-dev`
     }
 
     message.info(chalk.cyan(`Installing dependencies...`))

@@ -1,6 +1,7 @@
 export interface CreateCmdConfig {
   appName: string
   remoteTemplateUrl?: string
+  localTemplateType: 'default' | 'v16' | 'v18'
 }
 
 export interface CreateProjectConfig {
