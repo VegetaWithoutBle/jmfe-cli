@@ -1,44 +1,50 @@
-const fs = require('fs')
+const fs = require('fs').promises
 const path = require('path')
 
-function copy(from, to) {
+async function copy(from, to) {
   const fromPath = path.resolve(from)
+  console.log(fromPath, 'fromPath')
   const toPath = path.resolve(to)
-  fs.access(toPath, function (err) {
-    if (err) {
-      fs.mkdirSync(toPath)
-    }
-  })
-  fs.readdir(fromPath, function (err, paths) {
-    if (err) {
-      console.log(err)
+
+  console.log(toPath, 'toPath')
+  try {
+    await fs.access(toPath)
+  } catch (err) {
+    console.error(err)
+    try {
+      await fs.mkdir(toPath, { recursive: true })
+    } catch (err) {
+      console.error(err)
       return
     }
-    paths.forEach(function (item) {
-      const newFromPath = fromPath + '/' + item
-      const newToPath = path.resolve(toPath + '/' + item)
-
-      fs.stat(newFromPath, function (err, stat) {
-        if (err) return
-        if (stat.isFile()) {
-          copyFile(newFromPath, newToPath)
-          console.log(newToPath)
-        }
-        if (stat.isDirectory()) {
-          copy(newFromPath, newToPath)
-        }
-      })
-    })
-  })
-}
-
-function copyFile(from, to) {
-  fs.copyFileSync(from, to, function (err) {
-    if (err) {
-      console.log(err)
-      return
+  }
+  try {
+    const paths = await fs.readdir(fromPath)
+    for (const item of paths) {
+      const newFromPath = path.join(fromPath, item)
+      const newToPath = path.join(toPath, item)
+      const stat = await fs.stat(newFromPath)
+      if (stat.isFile()) {
+        await copyFile(newFromPath, newToPath)
+        console.log(newToPath)
+      }
+      if (stat.isDirectory()) {
+        await copy(newFromPath, newToPath)
+      }
     }
-  })
+  } catch (err) {
+    console.error(err)
+  }
 }
 
-copy('./lib', '../web-im/example/src/media')
+async function copyFile(from, to) {
+  try {
+    await fs.copyFile(from, to)
+  } catch (err) {
+    console.error(err)
+  }
+}
+
+copy('./dist', '../../clitest/test-one/node_modules/@erendingfe/jmfe-cli/dist')
+  .then(() => console.log('Copy completed'))
+  .catch(err => console.error('Copy failed:', err))

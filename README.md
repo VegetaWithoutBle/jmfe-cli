@@ -6,3 +6,4 @@
 [] serve
 [] analyze
 [] eject
+[] commit (集成 commitizen，lint-staged，husky)
