@@ -21,10 +21,9 @@ program
   })
 program
   .command('start')
-  .option('-p, --port <port>', 'set start port')
   .description('start a program')
   .action(option => {
-    start({ port: option.port })
+    start({})
   })
 program
   .command('build')
