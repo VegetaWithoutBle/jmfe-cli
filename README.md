@@ -1,6 +1,7 @@
 # jmfe-cli
 
-[] create
+[*] create
+[] create plugin eslint gitIgnored prettier tslint
 [] start
 [] build
 [] serve

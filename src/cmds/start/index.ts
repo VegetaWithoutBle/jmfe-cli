@@ -1,3 +1,4 @@
+import { devConfiguration } from '../../config/webpack/dev'
 import { StartCmdConfig } from './type'
 import { choosePort, prepareUrls } from './utils'
 export const start = async (params: StartCmdConfig) => {
@@ -8,4 +9,5 @@ export const start = async (params: StartCmdConfig) => {
   process.env.PORT = port.toString()
   process.env.ADDRESS = urls.lanUrlForConfig || 'localhost'
   process.env.PROTOCOL = protocol
+  console.log(devConfiguration)
 }

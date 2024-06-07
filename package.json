@@ -1,6 +1,6 @@
 {
   "name": "@erendingfe/jmfe-cli",
-  "version": "0.0.1-alpha3",
+  "version": "0.0.1-alpha4",
   "description": "jmfe-cli",
   "keywords": [
     "webpack",
@@ -16,7 +16,7 @@
   ],
   "main": "dist/index.js",
   "bin": {
-    "jmfe": "dist/index.js"
+    "jf": "dist/index.js"
   },
   "files": [
     "dist",
