@@ -36,9 +36,19 @@ export const transformDependencies = (org: { [key: string]: string }): string[] 
 }
 
 /**
- * get app name
- * TODO: maybe trans to get app info
+ * interpolate ${variable} in string
  */
-export const appName = (): string => {
-  return ''
+export const interpolate = (str: string, local: { [key: string]: string }) => {
+  if (str == null) {
+    return ''
+  }
+  const matches = str.match(/\$([a-zA-Z0-9_]+)|\${([a-zA-Z0-9_]+)}/g) || []
+  matches.forEach(function (match) {
+    const key = match.replace(/\$|{|}/g, '')
+    let variable = local[key] || ''
+    // Resolve recursive interpolations
+    variable = interpolate(variable, local)
+    str = str.replace(match, variable)
+  })
+  return str
 }

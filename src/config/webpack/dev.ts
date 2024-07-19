@@ -3,7 +3,7 @@ import paths from '../../paths'
 import { DevConfigurationParams } from './type'
 import { getDevEntries } from './utils'
 
-const getDevConfiguration = (params: DevConfigurationParams): Configuration => {
+const devConfigurationMaker = (params: DevConfigurationParams): Configuration => {
   return devConfiguration
 }
 const devConfiguration: Configuration = {
@@ -17,4 +17,4 @@ const devConfiguration: Configuration = {
   target: 'web',
 }
 
-export { devConfiguration, getDevConfiguration }
+export { devConfigurationMaker }

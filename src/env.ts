@@ -3,42 +3,15 @@
  */
 import chalk from 'chalk'
 import dotenv from 'dotenv'
+import { expand } from 'dotenv-expand'
 import fs from 'fs-extra'
 import path from 'path'
 import paths from './paths'
-
 export interface WebpackEnviroment {
   raw: StringObject
   userDefine: StringObject
   stringified: { [key: string]: string }
 }
-
-// 确保后续require paths, 可以读取到.env加载的环境变量
-delete require.cache[require.resolve('./paths')]
-const NODE_ENV = process.env.NODE_ENV
-if (!NODE_ENV) {
-  console.error(`The ${chalk.blue('NODE_ENV')} environment variable is required.`)
-  process.exit()
-}
-
-// .env 文件, 优先加载.env.*.local, 再加载.env.*, 最后是.env, .env.local
-const dotenvsFiles = [
-  `${paths.appDotenv}.${NODE_ENV}.local`,
-  `${paths.appDotenv}.local`,
-  `${paths.appDotenv}.${NODE_ENV}`,
-  `${paths.appDotenv}`,
-]
-
-dotenvsFiles.forEach(dotenvFile => {
-  if (fs.existsSync(dotenvFile)) {
-    // 支持使用${}引用已定义的变量
-    require('dotenv-expand')(
-      dotenv.config({
-        path: dotenvFile,
-      }),
-    )
-  }
-})
 
 const ENV_FILTER = /^JM_/i
 const BUILIN_ENVS = [
@@ -62,7 +35,38 @@ const BUILIN_ENVS = [
 
 let env: WebpackEnviroment | undefined
 
-export default function getClientEnvironment(publicUrl?: string): WebpackEnviroment {
+export const initEnvironment = () => {
+  const NODE_ENV = process.env.NODE_ENV
+
+  // 确保后续require paths, 可以读取到.env加载的环境变量
+  delete require.cache[require.resolve('./paths')]
+  if (!NODE_ENV) {
+    console.error(`The ${chalk.blue('NODE_ENV')} environment variable is required.`)
+    process.exit()
+  }
+
+  // .env 文件, 优先加载.env.*.local, 再加载.env.*, 最后是.env, .env.local
+  const dotenvsFiles = [
+    `${paths.appDotenv}.${NODE_ENV}.local`,
+    `${paths.appDotenv}.local`,
+    `${paths.appDotenv}.${NODE_ENV}`,
+    `${paths.appDotenv}`,
+  ]
+
+  dotenvsFiles.forEach(dotenvFile => {
+    if (fs.existsSync(dotenvFile)) {
+      // 支持使用${}引用已定义的变量
+      expand(
+        dotenv.config({
+          path: dotenvFile,
+        }),
+      )
+    }
+  })
+}
+
+export const getClientEnvironment = (publicUrl?: string): WebpackEnviroment => {
+  const NODE_ENV = process.env.NODE_ENV
   if (env) {
     return env
   }
